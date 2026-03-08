@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>RepurposeRx — Drug Repurposing AI</title>
+<style>
+  :root {
+    --bg: #0d0a14; --surface: #16102a; --surface2: #1e1638; --border: #2a1f45;
+    --accent: #a855f7; --accent2: #c084fc; --accent-dim: rgba(168,85,247,0.12);
+    --green: #10b981; --amber: #f59e0b; --cyan: #06b6d4; --indigo: #6366f1;
+    --text: #e2e8f0; --muted: #64748b; --subtle: #94a3b8;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'Inter', system-ui, sans-serif; min-height: 100vh; }
+
+  .header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 2rem; display: flex; align-items: center; justify-content: space-between; height: 60px; }
+  .logo { display: flex; align-items: center; gap: 12px; }
+  .logo-icon { width: 36px; height: 36px; background: linear-gradient(135deg, #a855f7, #7c3aed); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+  .logo-text { font-size: 1.1rem; font-weight: 700; }
+  .logo-sub { font-size: 0.75rem; color: var(--muted); }
+  .badge { background: var(--accent-dim); border: 1px solid var(--accent); color: var(--accent2); font-size: 0.7rem; padding: 3px 10px; border-radius: 20px; }
+
+  .main { max-width: 1300px; margin: 0 auto; padding: 2rem; }
+
+  .hero { text-align: center; padding: 3rem 0 2rem; }
+  .hero h1 { font-size: 2.4rem; font-weight: 800; background: linear-gradient(135deg, #a855f7, #06b6d4, #f59e0b); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin-bottom: 0.75rem; }
+  .hero p { color: var(--subtle); font-size: 1.05rem; max-width: 650px; margin: 0 auto 2rem; }
+
+  .search-box { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 1.5rem; margin-bottom: 2rem; }
+  .search-row { display: grid; grid-template-columns: 2fr 1fr auto; gap: 1rem; margin-bottom: 1rem; align-items: end; }
+  .input-wrap label { display: block; font-size: 0.72rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
+  input, select { width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: 0.95rem; padding: 10px 14px; outline: none; transition: border 0.2s; font-family: inherit; }
+  input:focus, select:focus { border-color: var(--accent); }
+  select option { background: #16102a; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+  .chip { background: var(--accent-dim); border: 1px solid var(--border); color: var(--subtle); font-size: 0.75rem; padding: 4px 12px; border-radius: 20px; cursor: pointer; transition: all 0.2s; }
+  .chip:hover { border-color: var(--accent); color: var(--accent2); }
+  .btn-primary { background: linear-gradient(135deg, #a855f7, #7c3aed); border: none; border-radius: 10px; color: #fff; font-size: 0.95rem; font-weight: 600; padding: 12px 28px; cursor: pointer; transition: all 0.2s; white-space: nowrap; }
+  .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
+  .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 2rem; }
+  .stat { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1.2rem; text-align: center; }
+  .stat-val { font-size: 1.8rem; font-weight: 800; color: var(--accent2); }
+  .stat-label { font-size: 0.72rem; color: var(--muted); margin-top: 4px; }
+
+  .status { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1.2rem 1.5rem; margin-bottom: 1.5rem; display: none; }
+  .status.active { display: flex; align-items: center; gap: 12px; }
+  .spinner { width: 20px; height: 20px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .results { display: none; }
+  .results.active { display: block; }
+  .section-title { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 1rem; }
+
+  /* SUMMARY */
+  .summary-card { background: var(--surface); border: 1px solid var(--border); border-left: 3px solid var(--accent); border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem; }
+  .summary-card h3 { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--accent2); margin-bottom: 0.75rem; }
+
+  /* BEST OPP */
+  .best-opp { background: linear-gradient(135deg, rgba(168,85,247,0.1), rgba(6,182,212,0.08)); border: 1px solid var(--accent); border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 1.5rem; }
+  .star-icon { font-size: 2.5rem; flex-shrink: 0; }
+  .best-opp h4 { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--accent2); margin-bottom: 0.4rem; }
+  .best-opp p { font-size: 0.9rem; color: var(--subtle); line-height: 1.6; }
+  .best-drug { font-size: 1.3rem; font-weight: 800; color: var(--text); margin-bottom: 0.4rem; }
+
+  /* META BAND */
+  .meta-band { display: flex; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
+  .meta-pill { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 0.8rem 1.4rem; text-align: center; }
+  .meta-pill-val { font-size: 1.4rem; font-weight: 800; }
+  .meta-pill-label { font-size: 0.7rem; color: var(--muted); margin-top: 4px; }
+
+  /* CANDIDATE CARDS */
+  .cand-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+  .cand-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1.25rem; transition: border-color 0.2s; }
+  .cand-card:hover { border-color: var(--accent); }
+  .cand-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.75rem; }
+  .cand-name { font-size: 1.25rem; font-weight: 800; color: var(--text); }
+  .cand-class { font-size: 0.75rem; color: var(--muted); margin-top: 2px; }
+  .score-ring { width: 52px; height: 52px; position: relative; flex-shrink: 0; }
+  .score-ring svg { transform: rotate(-90deg); }
+  .score-ring .sv { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: 800; color: var(--accent2); }
+  .cand-rationale { font-size: 0.85rem; color: var(--subtle); line-height: 1.6; margin-bottom: 0.75rem; }
+  .cand-indication { font-size: 0.8rem; color: var(--muted); margin-bottom: 0.75rem; }
+  .cand-indication span { color: var(--amber); }
+  .cand-meta { display: flex; flex-wrap: wrap; gap: 6px; }
+  .meta-tag { font-size: 0.7rem; padding: 3px 8px; border-radius: 6px; }
+  .t-evidence { background: rgba(168,85,247,0.1); color: var(--accent2); }
+  .t-stage { background: rgba(6,182,212,0.1); color: var(--cyan); }
+  .t-target { background: rgba(16,185,129,0.1); color: var(--green); }
+  .t-timeline { background: rgba(245,158,11,0.1); color: var(--amber); }
+
+  .strength-Strong { border-top: 2px solid #10b981; }
+  .strength-Moderate { border-top: 2px solid #06b6d4; }
+  .strength-Weak { border-top: 2px solid #f59e0b; }
+  .strength-Theoretical { border-top: 2px solid #64748b; }
+
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem; }
+  .panel { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1.25rem; }
+  .panel h3 { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin-bottom: 1rem; }
+  .pill-item { background: var(--surface2); border-radius: 8px; padding: 10px 14px; font-size: 0.85rem; color: var(--subtle); margin-bottom: 8px; border-left: 3px solid var(--accent); line-height: 1.5; }
+  .pill-item.amber { border-left-color: var(--amber); }
+  .pill-item.green { border-left-color: var(--green); }
+
+  .empty { text-align: center; padding: 4rem 2rem; color: var(--muted); }
+  .empty-icon { font-size: 3rem; margin-bottom: 1rem; }
+
+  @media (max-width: 768px) {
+    .search-row { grid-template-columns: 1fr; }
+    .stats { grid-template-columns: repeat(2,1fr); }
+    .two-col { grid-template-columns: 1fr; }
+    .cand-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">
+    <div class="logo-icon">♻️</div>
+    <div>
+      <div class="logo-text">RepurposeRx</div>
+      <div class="logo-sub">Drug Repurposing AI · OpenTargets + ChEMBL + PubMed</div>
+    </div>
+  </div>
+  <div class="badge">● Llama 3.3 · Free · No login</div>
+</div>
+
+<div class="main">
+  <div class="hero">
+    <h1>Find New Uses for Approved Drugs</h1>
+    <p>Enter any disease. RepurposeRx scans approved drugs from other indications for mechanistic overlap — surfacing repurposing candidates ranked by evidence strength, with rationale and estimated time-to-clinic advantage.</p>
+  </div>
+
+  <div class="search-box">
+    <div class="search-row">
+      <div class="input-wrap">
+        <label>Disease / Condition</label>
+        <input id="diseaseInput" type="text" placeholder="e.g. Systemic lupus erythematosus, ALS, Glioblastoma..."/>
+      </div>
+      <div class="input-wrap">
+        <label>Repurposing Priority</label>
+        <select id="priority">
+          <option value="efficacy">Highest Efficacy Potential</option>
+          <option value="safety">Best Safety Profile</option>
+          <option value="speed">Fastest to Clinic</option>
+          <option value="mechanism">Strongest Mechanistic Rationale</option>
+        </select>
+      </div>
+      <button class="btn-primary" id="searchBtn" onclick="runSearch()">Find Candidates →</button>
+    </div>
+    <div class="chips">
+      <span style="font-size:0.72rem;color:var(--muted);margin-right:4px;">Try:</span>
+      <span class="chip" onclick="setD('Systemic lupus erythematosus')">Lupus (SLE)</span>
+      <span class="chip" onclick="setD('Amyotrophic lateral sclerosis')">ALS</span>
+      <span class="chip" onclick="setD('Glioblastoma')">Glioblastoma</span>
+      <span class="chip" onclick="setD('Pulmonary fibrosis')">Pulmonary Fibrosis</span>
+      <span class="chip" onclick="setD('Ovarian cancer')">Ovarian Cancer</span>
+      <span class="chip" onclick="setD('Multiple sclerosis')">Multiple Sclerosis</span>
+      <span class="chip" onclick="setD('Psoriasis')">Psoriasis</span>
+    </div>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><div class="stat-val">4,000+</div><div class="stat-label">Approved Drugs</div></div>
+    <div class="stat"><div class="stat-val">60%</div><div class="stat-label">Lower Dev Cost vs New Drug</div></div>
+    <div class="stat"><div class="stat-val">3–5yr</div><div class="stat-label">Time-to-Clinic Advantage</div></div>
+    <div class="stat"><div class="stat-val">$0</div><div class="stat-label">Cost to Use</div></div>
+  </div>
+
+  <div class="status" id="statusBar">
+    <div class="spinner"></div>
+    <span class="status-text" id="statusText">Querying OpenTargets drug database...</span>
+  </div>
+
+  <div class="results" id="results"></div>
+
+  <div class="empty" id="emptyState">
+    <div class="empty-icon">💊</div>
+    <div style="font-size:1rem;color:var(--subtle);margin-bottom:0.5rem;">Enter a disease to find repurposing candidates</div>
+    <div style="font-size:0.85rem;">RepurposeRx scans approved drugs for mechanistic overlap with your target disease</div>
+  </div>
+</div>
+
+<script>
+function setD(d) { document.getElementById('diseaseInput').value = d; }
+function setStatus(m) { document.getElementById('statusBar').classList.add('active'); document.getElementById('statusText').textContent = m; }
+function hideStatus() { document.getElementById('statusBar').classList.remove('active'); }
+
+function scoreRing(score) {
+  const r=20, circ=2*Math.PI*r, fill=(score/100)*circ;
+  const col = score>=70?'#10b981':score>=40?'#f59e0b':'#64748b';
+  return `<svg width="52" height="52" viewBox="0 0 52 52"><circle cx="26" cy="26" r="${r}" fill="none" stroke="#2a1f45" stroke-width="6"/>
+    <circle cx="26" cy="26" r="${r}" fill="none" stroke="${col}" stroke-width="6" stroke-dasharray="${fill} ${circ}" stroke-linecap="round"/></svg>
+    <div class="sv" style="color:${col}">${score}</div>`;
+}
+
+async function runSearch() {
+  const disease = document.getElementById('diseaseInput').value.trim();
+  if (!disease) { alert('Please enter a disease.'); return; }
+  const priority = document.getElementById('priority').value;
+  const btn = document.getElementById('searchBtn');
+  btn.disabled = true;
+  document.getElementById('emptyState').style.display = 'none';
+  document.getElementById('results').classList.remove('active');
+
+  try {
+    setStatus('Querying OpenTargets for existing drug landscape...');
+    const [otResp, pmResp] = await Promise.all([
+      fetch(`/opentargets-drugs?disease=${encodeURIComponent(disease)}`),
+      fetch(`/pubmed-repurpose?disease=${encodeURIComponent(disease)}`)
+    ]);
+    const otData = await otResp.json();
+    const pmData = await pmResp.json();
+
+    setStatus('AI identifying repurposing candidates from approved drug space...');
+    const aiResp = await fetch('/analyze', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ disease: otData.disease_name||disease, known_drugs: otData.known_drugs||[], targets: otData.targets||[], papers: pmData||[], priority })
+    });
+    const aiData = await aiResp.json();
+    hideStatus();
+    if (aiData.error) { alert('Error: ' + aiData.error); btn.disabled=false; return; }
+    renderResults(otData.disease_name||disease, aiData, pmData);
+  } catch(e) {
+    hideStatus();
+    alert('Error: ' + e.message);
+  }
+  btn.disabled = false;
+}
+
+function renderResults(disease, ai, papers) {
+  const res = document.getElementById('results');
+  const cands = ai.repurposing_candidates || [];
+  const conf = ai.confidence || 0;
+  const pathways = ai.key_pathways_for_repurposing || [];
+
+  res.innerHTML = `
+    <div class="summary-card">
+      <h3>🔄 Repurposing Landscape — ${disease}</h3>
+      <p style="color:var(--subtle);line-height:1.7;font-size:0.92rem">${ai.disease_mechanism_summary||''}</p>
+    </div>
+
+    ${ai.best_opportunity ? `
+    <div class="best-opp">
+      <div class="star-icon">⭐</div>
+      <div>
+        <h4>Top Repurposing Opportunity</h4>
+        <div class="best-drug">${ai.best_opportunity.split(':')[0] || ai.best_opportunity}</div>
+        <p>${ai.best_opportunity}</p>
+      </div>
+    </div>` : ''}
+
+    <div class="meta-band">
+      <div class="meta-pill">
+        <div class="meta-pill-val" style="color:var(--accent2)">${conf}</div>
+        <span class="meta-pill-label">AI Confidence</span>
+      </div>
+      <div class="meta-pill">
+        <div class="meta-pill-val" style="color:#10b981">${cands.length}</div>
+        <span class="meta-pill-label">Candidates Found</span>
+      </div>
+      <div class="meta-pill">
+        <div class="meta-pill-val" style="color:#f59e0b">3–5yr</div>
+        <span class="meta-pill-label">Time Advantage</span>
+      </div>
+      <div class="meta-pill">
+        <div class="meta-pill-val" style="color:#06b6d4">60%</div>
+        <span class="meta-pill-label">Cost Reduction</span>
+      </div>
+    </div>
+
+    <p class="section-title">${cands.length} Repurposing Candidates — sorted by score</p>
+    <div class="cand-grid">
+      ${cands.sort((a,b)=>(b.repurposing_score||0)-(a.repurposing_score||0)).map(c => `
+        <div class="cand-card strength-${c.evidence_strength}">
+          <div class="cand-header">
+            <div>
+              <div class="cand-name">${c.drug_name}</div>
+              <div class="cand-class">${c.drug_class}</div>
+            </div>
+            <div class="score-ring">
+              ${scoreRing(c.repurposing_score||0)}
+            </div>
+          </div>
+          <div class="cand-indication">Currently approved for: <span>${c.current_indication}</span></div>
+          <div class="cand-rationale">${c.repurposing_rationale}</div>
+          ${c.safety_advantage ? `<div style="font-size:0.82rem;color:var(--green);margin-bottom:0.75rem">✓ ${c.safety_advantage}</div>` : ''}
+          <div class="cand-meta">
+            <span class="meta-tag t-evidence">Evidence: ${c.evidence_strength}</span>
+            <span class="meta-tag t-stage">${c.development_stage}</span>
+            <span class="meta-tag t-target">↔ ${c.target_overlap}</span>
+            <span class="meta-tag t-timeline">⏱ ${c.timeline_to_clinic}</span>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+
+    <div class="two-col">
+      <div class="panel">
+        <h3>🔬 Key Pathways for Repurposing</h3>
+        ${pathways.map(p=>`<div class="pill-item">${p}</div>`).join('')}
+        <div class="pill-item green" style="margin-top:12px">${ai.time_cost_advantage||''}</div>
+      </div>
+      <div class="panel">
+        <h3>⚠️ Regulatory &amp; Clinical Challenges</h3>
+        <div class="pill-item amber">${ai.challenges||''}</div>
+        ${papers.filter(p=>p.title).slice(0,3).map(p=>`<div class="pill-item" style="margin-top:8px;border-left-color:#64748b">${p.title}${p.year?' ('+p.year+')':''}</div>`).join('')}
+      </div>
+    </div>
+  `;
+  res.classList.add('active');
+  res.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+document.getElementById('diseaseInput').addEventListener('keydown', e => { if(e.key==='Enter') runSearch(); });
+</script>
+</body>
+</html>
